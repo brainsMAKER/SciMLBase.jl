@@ -329,7 +329,10 @@ struct OptimizationProblem{iip,F,uType,P,B,LC,UC,S,K} <: AbstractOptimizationPro
 end
 
 OptimizationProblem(f::OptimizationFunction, args...; kwargs...) = OptimizationProblem{isinplace(f)}(f, args...; kwargs...)
-OptimizationProblem(f, args...; kwargs...) = OptimizationProblem{true}(OptimizationFunction{true}(f), args...; kwargs...)
+function OptimizationProblem(f, args...; kwargs...)
+    isinplace(f,2)
+    OptimizationProblem{true}(OptimizationFunction{true}(f), args...; kwargs...)
+end
 
 isinplace(f::OptimizationFunction{iip}) where {iip} = iip
 isinplace(f::OptimizationProblem{iip}) where {iip} = iip
