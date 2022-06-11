@@ -161,25 +161,29 @@ to have one less. If neither of these dispatches exist, an error is thrown.
 If the error is thrown, `fname` is used to tell the user which function has the
 incorrect dispatches.
 
+If `has_two_dispatches = false`, then it is assumed that there is only one correct
+dispatch, i.e. `f(u,p)` for OptimizationFunction, and thus the check for the oop
+form is disabled and the 2-argument signature is ensured to be matched.
+
 # See also
 * [`numargs`](@ref numargs)
 """
-function isinplace(f,inplace_param_number,fname="f")
+function isinplace(f,inplace_param_number,fname="f";has_two_dispatches = true)
   nargs = numargs(f)
   iip_dispatch = any(x->x==inplace_param_number,nargs)
   oop_dispatch = any(x->x==inplace_param_number-1,nargs)
 
-  if !iip_dispatch && !oop_dispatch
+  if !iip_dispatch && (!oop_dispatch || !has_two_dispatches)
     if length(nargs) == 0
       throw(NoMethodsError(fname))
     elseif all(x->x>inplace_param_number,nargs)
       throw(TooManyArgumentsError(fname))
-    elseif all(x->x<inplace_param_number-1,nargs)
+    elseif all(x->x<inplace_param_number-1,nargs) || !has_two_dispatches
       # Possible extra safety?
       # Find if there's a `f(args...)` dispatch
       # If so, no error
       for i in 1:length(nargs)
-        if nargs[i] < inplace_param_number && any(isequal(Vararg{Any}),methods(f).ms[1].sig.parameters)
+        if nargs[i] < inplace_param_number && any(isequal(Vararg{Any}),methods(f).ms[i].sig.parameters)
           # If varargs, assume iip
           return true
         end
